@@ -15,109 +15,84 @@ from tensorflow.keras.losses import BinaryCrossentropy
 
 warnings.filterwarnings('ignore')
 
-# %%
+
 BASE_DIR = '/kaggle/input/anime-faces/data/'
 
-# %%
-# load complete image paths to the list
+
 image_paths = []
 for image_name in os.listdir(BASE_DIR):
     image_path = os.path.join(BASE_DIR, image_name)
     image_paths.append(image_path)
 
-# %%
+
 image_paths[:5]
 
-# %%
-# remove unnecessary file
+
 image_paths.remove('/kaggle/input/anime-faces/data/data')
 
-# %%
+
 len(image_paths)
 
-# %% [markdown]
-# ## Visualize the Image Dataset
 
-# %%
-# to display grid of images (7x7)
 plt.figure(figsize=(20, 20))
 temp_images = image_paths[:49]
 index = 1
 
 for image_path in temp_images:
     plt.subplot(7, 7, index)
-    # load the image
+    
     img = load_img(image_path)
-    # convert to numpy array
+    
     img = np.array(img)
-    # show the image
+    
     plt.imshow(img)
     plt.axis('off')
-    # increment the index for next image
+    
     index += 1
 
-# %% [markdown]
-# ## Preprocess Images
 
-# %%
-# load the image and convert to numpy array
 train_images = [np.array(load_img(path)) for path in tqdm(image_paths)]
 train_images = np.array(train_images)
 
-# %%
+
 train_images[0].shape
 
-# %%
-# reshape the array
 train_images = train_images.reshape(train_images.shape[0], 64, 64, 3).astype('float32')
 
-# %%
-# normalize the images
+
 train_images = (train_images - 127.5) / 127.5
 
-# %%
+
 train_images[0]
 
-# %% [markdown]
-# ## Create Generator & Discriminator Models
 
-# %%
-# latent dimension for random noise
 LATENT_DIM = 100
-# weight initializer
+
 WEIGHT_INIT = keras.initializers.RandomNormal(mean=0.0, stddev=0.02)
-# no. of channels of the image
-CHANNELS = 3 # for gray scale, keep it as 1
 
-# %% [markdown]
-# ### Generator Model
-# 
-# Generator Model will create new images similar to training data from random noise
+CHANNELS = 3 
 
-# %%
+
 model = Sequential(name='generator')
 
-# 1d random noise
+
 model.add(layers.Dense(8 * 8 * 512, input_dim=LATENT_DIM))
-# model.add(layers.BatchNormalization())
+
 model.add(layers.ReLU())
 
-# convert 1d to 3d
+
 model.add(layers.Reshape((8, 8, 512)))
 
-# upsample to 16x16
+
 model.add(layers.Conv2DTranspose(256, (4, 4), strides=(2, 2), padding='same', kernel_initializer=WEIGHT_INIT))
-# model.add(layers.BatchNormalization())
+
 model.add(layers.ReLU())
 
-# upsample to 32x32
 model.add(layers.Conv2DTranspose(128, (4, 4), strides=(2, 2), padding='same', kernel_initializer=WEIGHT_INIT))
-# model.add(layers.BatchNormalization())
 model.add(layers.ReLU())
 
-# upsample to 64x64
+
 model.add(layers.Conv2DTranspose(64, (4, 4), strides=(2, 2), padding='same', kernel_initializer=WEIGHT_INIT))
-# model.add(layers.BatchNormalization())
 model.add(layers.ReLU())
 
 model.add(layers.Conv2D(CHANNELS, (4, 4), padding='same', activation='tanh'))
@@ -125,17 +100,11 @@ model.add(layers.Conv2D(CHANNELS, (4, 4), padding='same', activation='tanh'))
 generator = model
 generator.summary()
 
-# %% [markdown]
-# ### Discriminator Model
-# 
-# Discriminator model will classify the image from the generator to check whether it real (or) fake images.
 
-# %%
 model = Sequential(name='discriminator')
 input_shape = (64, 64, 3)
 alpha = 0.2
 
-# create conv layers
 model.add(layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same', input_shape=input_shape))
 model.add(layers.BatchNormalization())
 model.add(layers.LeakyReLU(alpha=alpha))
@@ -151,16 +120,12 @@ model.add(layers.LeakyReLU(alpha=alpha))
 model.add(layers.Flatten())
 model.add(layers.Dropout(0.3))
 
-# output class
 model.add(layers.Dense(1, activation='sigmoid'))
 
 discriminator = model
 discriminator.summary()
 
-# %% [markdown]
-# ## Create DCGAN
 
-# %%
 class DCGAN(keras.Model):
     def __init__(self, generator, discriminator, latent_dim):
         super().__init__()
@@ -281,19 +246,15 @@ noise = tf.random.normal([1, 100])
 fig = plt.figure(figsize=(3, 3))
 # generate the image from noise
 g_img = dcgan.generator(noise)
-# denormalize the image
 g_img = (g_img * 127.5) + 127.5
 g_img.numpy()
 img = array_to_img(g_img[0])
 plt.imshow(img)
 plt.axis('off')
-# plt.savefig('epoch_{:03d}.png'.format(epoch))
 plt.show()
 
-# %%
 
 
-# %%
 
 
 
